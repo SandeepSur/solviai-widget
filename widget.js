@@ -19,147 +19,201 @@
     "https://vite-react-tau-five-75.vercel.app/?" + params.toString();
 
   // Prevent duplicates
-  if (window.__processaiChatLoaded) return;
-  window.__processaiChatLoaded = true;
+  if (window.__solviaiWidgetLoaded) return;
+  window.__solviaiWidgetLoaded = true;
 
-  function injectCss() {
-    if (document.getElementById("solviai-widget-css")) return;
-
-    const style = document.createElement("style");
-    style.id = "solviai-widget-css";
-    style.textContent = `
-      #solviai-portal {
-        position: fixed !important;
-        inset: 0 !important;
-        width: 100vw !important;
-        height: 100vh !important;
-        pointer-events: none !important;
-        z-index: 2147483647 !important;
-        transform: none !important;
-      }
-
-      #processai-bubble {
-        position: fixed !important;
-        right: 25px !important;
-        bottom: 85px !important;
-        left: auto !important;
-        top: auto !important;
-
-        width: 64px !important;
-        height: 64px !important;
-        border-radius: 50% !important;
-        background: linear-gradient(135deg, #6D28D9, #8B5CF6) !important;
-
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-
-        cursor: pointer !important;
-        user-select: none !important;
-        pointer-events: auto !important;
-
-        box-shadow: 0 10px 24px rgba(0,0,0,.25) !important;
-        z-index: 2147483647 !important;
-
-        transform: none !important;
-      }
-
-      #processai-frame {
-        position: fixed !important;
-        right: 25px !important;
-        bottom: 160px !important;
-        left: auto !important;
-        top: auto !important;
-
-        width: 360px !important;
-        height: 520px !important;
-        border: 0 !important;
-        border-radius: 14px !important;
-
-        box-shadow: 0 12px 28px rgba(0,0,0,.3) !important;
-        z-index: 2147483646 !important;
-
-        background: transparent !important;
-      }
-    `;
-    document.head.appendChild(style);
-  }
+  console.log("🚀 SolviAI Widget Loading...", { PROJECT_ID, BRAND_LOGO });
 
   function init() {
-    if (!document.documentElement) return setTimeout(init, 50);
-
-    injectCss();
-
-    // Create portal at the highest safe level
-    let portal = document.getElementById("solviai-portal");
-    if (!portal) {
-      portal = document.createElement("div");
-      portal.id = "solviai-portal";
-      // Attach to <html> (documentElement) to avoid body transforms
-      document.documentElement.appendChild(portal);
+    // Wait for body to be ready
+    if (!document.body) {
+      return setTimeout(init, 50);
     }
 
-    // Prevent duplicates
-    if (document.getElementById("processai-bubble")) return;
+    console.log("✅ Body ready, creating widget...");
 
-    // Bubble
-    const chatButton = document.createElement("div");
-    chatButton.id = "processai-bubble";
-    chatButton.innerHTML = `
+    // Check for duplicates
+    if (document.getElementById("solviai-widget-container")) {
+      console.warn("⚠️ Widget already exists");
+      return;
+    }
+
+    // Create a single container that holds everything
+    const container = document.createElement("div");
+    container.id = "solviai-widget-container";
+    
+    // Apply styles directly to container (more reliable than CSS injection)
+    Object.assign(container.style, {
+      position: "fixed",
+      bottom: "0",
+      right: "0",
+      zIndex: "2147483647",
+      pointerEvents: "none",
+      fontFamily: "system-ui, -apple-system, sans-serif",
+    });
+
+    // Bubble button
+    const bubble = document.createElement("button");
+    bubble.id = "solviai-bubble";
+    bubble.type = "button";
+    bubble.innerHTML = `
       <svg
         xmlns="http://www.w3.org/2000/svg"
-        width="32"
-        height="32"
+        width="28"
+        height="28"
         viewBox="0 0 24 24"
         fill="none"
-        stroke="white"
+        stroke="currentColor"
         stroke-width="2"
         stroke-linecap="round"
         stroke-linejoin="round"
-        aria-label="Customer Support"
       >
-        <path d="M4 15v-3a8 8 0 0 1 16 0v3" />
-        <path d="M4 15a2 2 0 0 0 2 2h1v-6H6a2 2 0 0 0-2 2z" />
-        <path d="M20 15a2 2 0 0 1-2 2h-1v-6h1a2 2 0 0 1 2 2z" />
-        <path d="M12 19v2" />
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
       </svg>
     `;
 
+    Object.assign(bubble.style, {
+      position: "fixed",
+      bottom: "24px",
+      right: "24px",
+      width: "60px",
+      height: "60px",
+      borderRadius: "50%",
+      border: "none",
+      background: "linear-gradient(135deg, #7C3AED 0%, #5B21B6 100%)",
+      color: "white",
+      cursor: "pointer",
+      boxShadow: "0 4px 12px rgba(124, 58, 237, 0.4)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      transition: "transform 0.2s, box-shadow 0.2s",
+      pointerEvents: "auto",
+      zIndex: "2147483647",
+    });
+
+    // Hover effect
+    bubble.onmouseenter = () => {
+      bubble.style.transform = "scale(1.05)";
+      bubble.style.boxShadow = "0 6px 20px rgba(124, 58, 237, 0.6)";
+    };
+    bubble.onmouseleave = () => {
+      bubble.style.transform = "scale(1)";
+      bubble.style.boxShadow = "0 4px 12px rgba(124, 58, 237, 0.4)";
+    };
+
     // Iframe
     const iframe = document.createElement("iframe");
-    iframe.id = "processai-frame";
+    iframe.id = "solviai-iframe";
     iframe.src = APP_URL;
     iframe.title = "SolviAI Chat";
     iframe.allow = "microphone; autoplay";
-    iframe.setAttribute("sandbox", "allow-scripts allow-same-origin allow-forms");
+    iframe.setAttribute(
+      "sandbox",
+      "allow-scripts allow-same-origin allow-forms allow-popups"
+    );
 
-    // Start hidden (we control via JS)
-    iframe.style.opacity = "0";
-    iframe.style.pointerEvents = "none";
-    iframe.style.transform = "translateY(100px)";
-    iframe.style.transition = "all .45s ease";
+    // Check if mobile
+    const isMobile = window.innerWidth <= 768;
 
-    portal.appendChild(chatButton);
-    portal.appendChild(iframe);
+    if (isMobile) {
+      // Mobile: fullscreen
+      Object.assign(iframe.style, {
+        position: "fixed",
+        top: "0",
+        left: "0",
+        width: "100%",
+        height: "100%",
+        border: "none",
+        display: "none",
+        zIndex: "2147483646",
+        pointerEvents: "auto",
+      });
+    } else {
+      // Desktop: floating
+      Object.assign(iframe.style, {
+        position: "fixed",
+        bottom: "100px",
+        right: "24px",
+        width: "400px",
+        height: "600px",
+        maxHeight: "calc(100vh - 120px)",
+        border: "none",
+        borderRadius: "16px",
+        boxShadow: "0 8px 32px rgba(0, 0, 0, 0.3)",
+        display: "none",
+        zIndex: "2147483646",
+        pointerEvents: "auto",
+        background: "#fff",
+      });
+    }
 
-    // Toggle
-    let open = false;
-    chatButton.onclick = () => {
-      open = !open;
-      iframe.style.opacity = open ? "1" : "0";
-      iframe.style.pointerEvents = open ? "auto" : "none";
-      iframe.style.transform = open ? "translateY(0)" : "translateY(100px)";
+    // Append to container
+    container.appendChild(bubble);
+    container.appendChild(iframe);
+
+    // Append container to body
+    document.body.appendChild(container);
+
+    console.log("✅ Widget elements created and appended");
+
+    // Toggle functionality
+    let isOpen = false;
+
+    bubble.onclick = () => {
+      isOpen = !isOpen;
+      console.log("🔄 Toggle:", isOpen);
+
+      if (isOpen) {
+        iframe.style.display = "block";
+        bubble.innerHTML = `
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="28"
+            height="28"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        `;
+      } else {
+        iframe.style.display = "none";
+        bubble.innerHTML = `
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="28"
+            height="28"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          </svg>
+        `;
+      }
     };
 
-    // Debug (helps confirm positioning)
-    try {
-      const b = chatButton.getBoundingClientRect();
-      console.log("✅ SolviAI bubble rect:", b);
-    } catch {}
+    // Debug positioning
+    const rect = bubble.getBoundingClientRect();
+    console.log("✅ Bubble position:", {
+      bottom: rect.bottom,
+      right: window.innerWidth - rect.right,
+      visible: rect.width > 0 && rect.height > 0,
+    });
   }
 
+  // Initialize
   if (document.readyState === "loading") {
-    window.addEventListener("DOMContentLoaded", init);
+    document.addEventListener("DOMContentLoaded", init);
   } else {
     init();
   }
