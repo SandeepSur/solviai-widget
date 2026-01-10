@@ -4,15 +4,22 @@
     document.querySelector("script[data-project-id]");
 
   const PROJECT_ID = script?.dataset?.projectId;
+  const BRAND_LOGO = script?.dataset?.brandLogo || "";
 
   if (!PROJECT_ID) {
     console.error("❌ SolviAI: Missing data-project-id");
     return;
   }
 
+  // ✅ FIX: Include both project_id AND brand_logo
+  const params = new URLSearchParams();
+  params.set("project_id", PROJECT_ID);
+  if (BRAND_LOGO) params.set("brand_logo", BRAND_LOGO);
+
   const APP_URL =
-    "https://vite-react-tau-five-75.vercel.app/?project_id=" +
-    encodeURIComponent(PROJECT_ID);
+    "https://vite-react-tau-five-75.vercel.app/?" + params.toString();
+
+  console.log("🚀 SolviAI Loading:", APP_URL);
 
   // Prevent duplicates
   if (window.__processaiChatLoaded) return;
@@ -25,14 +32,13 @@
       return;
     }
 
-    // Prevent duplicates (in case script loads twice)
+    // Prevent duplicates
     if (document.getElementById("processai-bubble")) return;
 
     // Floating bubble
     const chatButton = document.createElement("div");
     chatButton.id = "processai-bubble";
 
-    // ✅ Customer Support headset icon (inline SVG)
     chatButton.innerHTML = `
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -57,7 +63,7 @@
       position: "fixed",
       bottom: "85px",
       right: "25px",
-      background: "linear-gradient(135deg, #6D28D9, #8B5CF6)", // ✅ purple
+      background: "linear-gradient(135deg, #6D28D9, #8B5CF6)",
       borderRadius: "50%",
       width: "64px",
       height: "64px",
@@ -109,7 +115,11 @@
       iframe.style.transform = open
         ? "translateY(0)"
         : "translateY(100px)";
+      
+      console.log(open ? "✅ Chat opened" : "✅ Chat closed");
     };
+
+    console.log("✅ Widget initialized");
   }
 
   // Ensure DOM is ready
