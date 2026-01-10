@@ -22,7 +22,8 @@
   if (window.__solviaiWidgetLoaded) return;
   window.__solviaiWidgetLoaded = true;
 
-  console.log("🚀 SolviAI Widget Loading...", { PROJECT_ID, BRAND_LOGO });
+  console.log("🚀 SolviAI Widget Loading...");
+  console.log("📍 Iframe URL:", APP_URL);
 
   function init() {
     // Wait for body to be ready
@@ -42,7 +43,7 @@
     const container = document.createElement("div");
     container.id = "solviai-widget-container";
     
-    // Apply styles directly to container (more reliable than CSS injection)
+    // Apply styles directly to container
     Object.assign(container.style, {
       position: "fixed",
       bottom: "0",
@@ -108,10 +109,10 @@
     iframe.src = APP_URL;
     iframe.title = "SolviAI Chat";
     iframe.allow = "microphone; autoplay";
-    iframe.setAttribute(
-      "sandbox",
-      "allow-scripts allow-same-origin allow-forms allow-popups"
-    );
+    
+    // CRITICAL: Remove restrictive sandbox or make it more permissive
+    // The issue is likely here - sandbox was too restrictive
+    iframe.removeAttribute("sandbox"); // Try without sandbox first
 
     // Check if mobile
     const isMobile = window.innerWidth <= 768;
@@ -128,6 +129,7 @@
         display: "none",
         zIndex: "2147483646",
         pointerEvents: "auto",
+        backgroundColor: "transparent", // Changed from white
       });
     } else {
       // Desktop: floating
@@ -144,7 +146,7 @@
         display: "none",
         zIndex: "2147483646",
         pointerEvents: "auto",
-        background: "#fff",
+        backgroundColor: "transparent", // Changed from white
       });
     }
 
@@ -157,15 +159,27 @@
 
     console.log("✅ Widget elements created and appended");
 
+    // Listen for iframe load events
+    iframe.onload = () => {
+      console.log("✅ Iframe loaded successfully");
+    };
+
+    iframe.onerror = (e) => {
+      console.error("❌ Iframe failed to load:", e);
+    };
+
     // Toggle functionality
     let isOpen = false;
 
     bubble.onclick = () => {
       isOpen = !isOpen;
-      console.log("🔄 Toggle:", isOpen);
+      console.log("🔄 Toggle:", isOpen ? "OPEN" : "CLOSED");
 
       if (isOpen) {
         iframe.style.display = "block";
+        console.log("📺 Iframe display set to block");
+        console.log("📍 Iframe src:", iframe.src);
+        
         bubble.innerHTML = `
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -209,6 +223,10 @@
       right: window.innerWidth - rect.right,
       visible: rect.width > 0 && rect.height > 0,
     });
+
+    // Test if we can access the iframe URL directly
+    console.log("🧪 Test: Open this URL directly in a new tab to verify it works:");
+    console.log(APP_URL);
   }
 
   // Initialize
