@@ -1,38 +1,47 @@
 (function () {
+  // 🔹 Read script tag (where widget is embedded)
   const script =
     document.currentScript ||
     document.querySelector("script[data-project-id]");
 
   const PROJECT_ID = script?.dataset?.projectId;
+  const BRAND_LOGO = script?.dataset?.brandLogo || "";
 
   if (!PROJECT_ID) {
     console.error("❌ SolviAI: Missing data-project-id");
     return;
   }
 
-  const APP_URL =
-    "https://vite-react-tau-five-75.vercel.app/?project_id=" +
-    encodeURIComponent(PROJECT_ID);
+  // 🔹 Build iframe URL with params
+  const params = new URLSearchParams();
+  params.set("project_id", PROJECT_ID);
 
-  // Prevent duplicates
+  if (BRAND_LOGO) {
+    params.set("brand_logo", BRAND_LOGO);
+  }
+
+  const APP_URL =
+    "https://vite-react-tau-five-75.vercel.app/?" + params.toString();
+
+  // 🔒 Prevent duplicate widget load
   if (window.__processaiChatLoaded) return;
   window.__processaiChatLoaded = true;
 
   function init() {
-    // Ensure body exists
+    // Ensure DOM is ready
     if (!document.body) {
       setTimeout(init, 50);
       return;
     }
 
-    // Prevent duplicates (in case script loads twice)
+    // Prevent duplicates
     if (document.getElementById("processai-bubble")) return;
 
-    // Floating bubble
+    // 🔵 Floating chat bubble
     const chatButton = document.createElement("div");
     chatButton.id = "processai-bubble";
 
-    // ✅ Customer Support headset icon (inline SVG)
+    // ✅ Customer support headset icon (inline SVG)
     chatButton.innerHTML = `
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -57,7 +66,7 @@
       position: "fixed",
       bottom: "85px",
       right: "25px",
-      background: "linear-gradient(135deg, #6D28D9, #8B5CF6)", // ✅ purple
+      background: "linear-gradient(135deg, #6D28D9, #8B5CF6)", // SolviAI purple
       borderRadius: "50%",
       width: "64px",
       height: "64px",
@@ -70,7 +79,7 @@
       zIndex: "2147483647",
     });
 
-    // Chat iframe
+    // 🪟 Chat iframe
     const iframe = document.createElement("iframe");
     iframe.id = "processai-frame";
     iframe.src = APP_URL;
@@ -101,6 +110,7 @@
     document.body.appendChild(chatButton);
     document.body.appendChild(iframe);
 
+    // 🔄 Toggle open / close
     let open = false;
     chatButton.onclick = () => {
       open = !open;
@@ -112,7 +122,7 @@
     };
   }
 
-  // Ensure DOM is ready
+  // DOM ready check
   if (document.readyState === "loading") {
     window.addEventListener("DOMContentLoaded", init);
   } else {
