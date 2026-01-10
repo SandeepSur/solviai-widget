@@ -18,44 +18,93 @@
   const APP_URL =
     "https://vite-react-tau-five-75.vercel.app/?" + params.toString();
 
+  // Prevent duplicates
   if (window.__processaiChatLoaded) return;
   window.__processaiChatLoaded = true;
 
-  console.log("🚀 SolviAI Widget Loading...", { PROJECT_ID, APP_URL });
+  function injectCss() {
+    if (document.getElementById("solviai-widget-css")) return;
+
+    const style = document.createElement("style");
+    style.id = "solviai-widget-css";
+    style.textContent = `
+      #solviai-portal {
+        position: fixed !important;
+        inset: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        pointer-events: none !important;
+        z-index: 2147483647 !important;
+        transform: none !important;
+      }
+
+      #processai-bubble {
+        position: fixed !important;
+        right: 25px !important;
+        bottom: 85px !important;
+        left: auto !important;
+        top: auto !important;
+
+        width: 64px !important;
+        height: 64px !important;
+        border-radius: 50% !important;
+        background: linear-gradient(135deg, #6D28D9, #8B5CF6) !important;
+
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+
+        cursor: pointer !important;
+        user-select: none !important;
+        pointer-events: auto !important;
+
+        box-shadow: 0 10px 24px rgba(0,0,0,.25) !important;
+        z-index: 2147483647 !important;
+
+        transform: none !important;
+      }
+
+      #processai-frame {
+        position: fixed !important;
+        right: 25px !important;
+        bottom: 160px !important;
+        left: auto !important;
+        top: auto !important;
+
+        width: 360px !important;
+        height: 520px !important;
+        border: 0 !important;
+        border-radius: 14px !important;
+
+        box-shadow: 0 12px 28px rgba(0,0,0,.3) !important;
+        z-index: 2147483646 !important;
+
+        background: transparent !important;
+      }
+    `;
+    document.head.appendChild(style);
+  }
 
   function init() {
-    if (!document.body) return setTimeout(init, 50);
+    if (!document.documentElement) return setTimeout(init, 50);
 
-    console.log("✅ SolviAI: DOM Ready, initializing...");
+    injectCss();
 
-    // ✅ Create a top-level portal container (avoids Framer transform/overflow issues)
+    // Create portal at the highest safe level
     let portal = document.getElementById("solviai-portal");
     if (!portal) {
       portal = document.createElement("div");
       portal.id = "solviai-portal";
-
-      Object.assign(portal.style, {
-        position: "fixed",
-        inset: "0",
-        pointerEvents: "none",
-        zIndex: "2147483647",
-      });
-
-      document.body.appendChild(portal);
-      console.log("✅ Portal created");
+      // Attach to <html> (documentElement) to avoid body transforms
+      document.documentElement.appendChild(portal);
     }
 
     // Prevent duplicates
-    if (document.getElementById("processai-bubble")) {
-      console.warn("⚠️ Bubble already exists");
-      return;
-    }
+    if (document.getElementById("processai-bubble")) return;
 
     // Bubble
     const chatButton = document.createElement("div");
     chatButton.id = "processai-bubble";
-    chatButton.style.pointerEvents = "auto";
-
     chatButton.innerHTML = `
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -76,25 +125,6 @@
       </svg>
     `;
 
-    Object.assign(chatButton.style, {
-      position: "fixed",
-      bottom: "85px",
-      right: "25px",
-      width: "64px",
-      height: "64px",
-      borderRadius: "50%",
-      background: "linear-gradient(135deg, #6D28D9, #8B5CF6)",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      cursor: "pointer",
-      userSelect: "none",
-      boxShadow: "0 10px 24px rgba(0,0,0,.25)",
-      zIndex: "2147483647",
-      transform: "none",
-      willChange: "transform",
-    });
-
     // Iframe
     const iframe = document.createElement("iframe");
     iframe.id = "processai-frame";
@@ -102,84 +132,30 @@
     iframe.title = "SolviAI Chat";
     iframe.allow = "microphone; autoplay";
     iframe.setAttribute("sandbox", "allow-scripts allow-same-origin allow-forms");
-    iframe.style.pointerEvents = "auto";
 
-    // Check if mobile
-    const isMobile = window.innerWidth <= 768;
+    // Start hidden (we control via JS)
+    iframe.style.opacity = "0";
+    iframe.style.pointerEvents = "none";
+    iframe.style.transform = "translateY(100px)";
+    iframe.style.transition = "all .45s ease";
 
-    if (isMobile) {
-      Object.assign(iframe.style, {
-        position: "fixed",
-        bottom: "0",
-        right: "0",
-        left: "0",
-        top: "0",
-        width: "100%",
-        height: "100%",
-        border: "0",
-        borderRadius: "0",
-        boxShadow: "none",
-        opacity: "0",
-        pointerEvents: "none",
-        transform: "translateY(100%)",
-        transition: "all .45s ease",
-        zIndex: "2147483646",
-        background: "#050713",
-        willChange: "transform, opacity",
-      });
-    } else {
-      Object.assign(iframe.style, {
-        position: "fixed",
-        bottom: "160px",
-        right: "25px",
-        width: "360px",
-        height: "520px",
-        border: "0",
-        borderRadius: "14px",
-        boxShadow: "0 12px 28px rgba(0,0,0,.3)",
-        opacity: "0",
-        pointerEvents: "none",
-        transform: "translateY(100px)",
-        transition: "all .45s ease",
-        zIndex: "2147483646",
-        background: "transparent",
-        willChange: "transform, opacity",
-      });
-    }
-
-    // Append into portal (important)
     portal.appendChild(chatButton);
     portal.appendChild(iframe);
 
-    console.log("✅ Bubble and iframe appended to portal");
-
+    // Toggle
     let open = false;
     chatButton.onclick = () => {
       open = !open;
-      console.log("🔄 Toggle chat:", open);
-      
-      if (open) {
-        iframe.style.display = "block";
-        iframe.style.opacity = "1";
-        iframe.style.pointerEvents = "auto";
-        iframe.style.transform = "translateY(0)";
-        console.log("✅ Iframe opened");
-      } else {
-        iframe.style.opacity = "0";
-        iframe.style.pointerEvents = "none";
-        iframe.style.transform = isMobile ? "translateY(100%)" : "translateY(100px)";
-        console.log("✅ Iframe closed");
-      }
+      iframe.style.opacity = open ? "1" : "0";
+      iframe.style.pointerEvents = open ? "auto" : "none";
+      iframe.style.transform = open ? "translateY(0)" : "translateY(100px)";
     };
 
-    // Test iframe load
-    iframe.onload = () => {
-      console.log("✅ Iframe loaded successfully");
-    };
-
-    iframe.onerror = (e) => {
-      console.error("❌ Iframe failed to load:", e);
-    };
+    // Debug (helps confirm positioning)
+    try {
+      const b = chatButton.getBoundingClientRect();
+      console.log("✅ SolviAI bubble rect:", b);
+    } catch {}
   }
 
   if (document.readyState === "loading") {
