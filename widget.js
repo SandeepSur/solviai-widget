@@ -1,45 +1,51 @@
 (function () {
-  "use strict";
-
   const script =
     document.currentScript ||
     document.querySelector("script[data-project-id]");
 
   const PROJECT_ID = script?.dataset?.projectId;
-  const BRAND_LOGO = script?.dataset?.brandLogo || "";
 
   if (!PROJECT_ID) {
-    console.error("❌ SolviAI: Missing data-project-id on the embed script tag");
+    console.error("❌ SolviAI: Missing data-project-id");
     return;
   }
 
-  // Build iframe URL (SaaS params)
-  const params = new URLSearchParams();
-  params.set("project_id", PROJECT_ID);
-  if (BRAND_LOGO) params.set("brand_logo", BRAND_LOGO);
+  const APP_URL =
+    "https://vite-react-tau-five-75.vercel.app/?project_id=" +
+    encodeURIComponent(PROJECT_ID);
 
-  const IFRAME_URL =
-    "https://vite-react-tau-five-75.vercel.app/?" + params.toString();
+  // Prevent duplicates
+  if (window.__processaiChatLoaded) return;
+  window.__processaiChatLoaded = true;
 
-  // Prevent multiple loads
-  if (window.__solviaiLoaded) return;
-  window.__solviaiLoaded = true;
+  function init() {
+    // Ensure body exists
+    if (!document.body) {
+      setTimeout(init, 50);
+      return;
+    }
 
-  function createWidget() {
-    if (!document.body) return setTimeout(createWidget, 100);
+    // Prevent duplicates (in case script loads twice)
+    if (document.getElementById("processai-bubble")) return;
 
-    // Prevent duplicates
-    if (document.getElementById("solviai-chat-bubble")) return;
+    // Floating bubble
+    const chatButton = document.createElement("div");
+    chatButton.id = "processai-bubble";
 
-    // Bubble button
-    const bubble = document.createElement("button");
-    bubble.id = "solviai-chat-bubble";
-    bubble.type = "button";
-    bubble.setAttribute("aria-label", "Open SolviAI chat");
-
-    // Headset icon
-    bubble.innerHTML = `
-      <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    // ✅ Customer Support headset icon (inline SVG)
+    chatButton.innerHTML = `
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="32"
+        height="32"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="white"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-label="Customer Support"
+      >
         <path d="M4 15v-3a8 8 0 0 1 16 0v3" />
         <path d="M4 15a2 2 0 0 0 2 2h1v-6H6a2 2 0 0 0-2 2z" />
         <path d="M20 15a2 2 0 0 1-2 2h-1v-6h1a2 2 0 0 1 2 2z" />
@@ -47,94 +53,69 @@
       </svg>
     `;
 
-    bubble.style.cssText = `
-      position: fixed !important;
-      right: 20px !important;
-      bottom: 20px !important;
-      left: auto !important;
-      top: auto !important;
+    Object.assign(chatButton.style, {
+      position: "fixed",
+      bottom: "85px",
+      right: "25px",
+      background: "linear-gradient(135deg, #6D28D9, #8B5CF6)", // ✅ purple
+      borderRadius: "50%",
+      width: "64px",
+      height: "64px",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      cursor: "pointer",
+      userSelect: "none",
+      boxShadow: "0 10px 24px rgba(0,0,0,.25)",
+      zIndex: "2147483647",
+    });
 
-      width: 56px !important;
-      height: 56px !important;
-      border-radius: 50% !important;
-
-      border: none !important;
-      background: linear-gradient(135deg, #7C3AED, #5B21B6) !important;
-      color: white !important;
-
-      cursor: pointer !important;
-      display: flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-
-      box-shadow: 0 10px 24px rgba(0,0,0,0.35) !important;
-      z-index: 2147483647 !important;
-
-      padding: 0 !important;
-      margin: 0 !important;
-    `;
-
-    // Iframe
+    // Chat iframe
     const iframe = document.createElement("iframe");
-    iframe.id = "solviai-chat-iframe";
-    iframe.src = IFRAME_URL;
+    iframe.id = "processai-frame";
+    iframe.src = APP_URL;
     iframe.title = "SolviAI Chat";
     iframe.allow = "microphone; autoplay";
-    iframe.setAttribute("sandbox", "allow-scripts allow-same-origin allow-forms");
+    iframe.setAttribute(
+      "sandbox",
+      "allow-scripts allow-same-origin allow-forms"
+    );
 
-    iframe.style.cssText = `
-      position: fixed !important;
-      right: 20px !important;
-      bottom: 90px !important;
-      left: auto !important;
-      top: auto !important;
+    Object.assign(iframe.style, {
+      position: "fixed",
+      bottom: "160px",
+      right: "25px",
+      width: "360px",
+      height: "520px",
+      border: "0",
+      borderRadius: "14px",
+      boxShadow: "0 12px 28px rgba(0,0,0,.3)",
+      opacity: "0",
+      pointerEvents: "none",
+      transform: "translateY(100px)",
+      transition: "all .45s ease",
+      zIndex: "2147483646",
+      background: "transparent",
+    });
 
-      width: 380px !important;
-      height: 600px !important;
-
-      border: none !important;
-      border-radius: 12px !important;
-
-      box-shadow: 0 12px 28px rgba(0,0,0,0.35) !important;
-      z-index: 2147483646 !important;
-
-      display: none !important;
-      background: transparent !important;
-    `;
-
-    document.body.appendChild(bubble);
+    document.body.appendChild(chatButton);
     document.body.appendChild(iframe);
 
     let open = false;
-
-    const openIcon =
-      `<svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M4 15v-3a8 8 0 0 1 16 0v3" />
-        <path d="M4 15a2 2 0 0 0 2 2h1v-6H6a2 2 0 0 0-2 2z" />
-        <path d="M20 15a2 2 0 0 1-2 2h-1v-6h1a2 2 0 0 1 2 2z" />
-        <path d="M12 19v2" />
-      </svg>`;
-
-    const closeIcon =
-      `<svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <line x1="18" y1="6" x2="6" y2="18"/>
-        <line x1="6" y1="6" x2="18" y2="18"/>
-      </svg>`;
-
-    bubble.onclick = function () {
+    chatButton.onclick = () => {
       open = !open;
-      iframe.style.display = open ? "block" : "none";
-      bubble.innerHTML = open ? closeIcon : openIcon;
+      iframe.style.opacity = open ? "1" : "0";
+      iframe.style.pointerEvents = open ? "auto" : "none";
+      iframe.style.transform = open
+        ? "translateY(0)"
+        : "translateY(100px)";
     };
-
-    // Debug logs (helpful)
-    console.log("✅ SolviAI widget loaded");
-    console.log("➡️ Iframe URL:", IFRAME_URL);
   }
 
+  // Ensure DOM is ready
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", createWidget);
+    window.addEventListener("DOMContentLoaded", init);
   } else {
-    createWidget();
+    init();
   }
 })();
