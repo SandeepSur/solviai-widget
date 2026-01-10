@@ -21,8 +21,12 @@
   if (window.__processaiChatLoaded) return;
   window.__processaiChatLoaded = true;
 
+  console.log("🚀 SolviAI Widget Loading...", { PROJECT_ID, APP_URL });
+
   function init() {
     if (!document.body) return setTimeout(init, 50);
+
+    console.log("✅ SolviAI: DOM Ready, initializing...");
 
     // ✅ Create a top-level portal container (avoids Framer transform/overflow issues)
     let portal = document.getElementById("solviai-portal");
@@ -38,10 +42,14 @@
       });
 
       document.body.appendChild(portal);
+      console.log("✅ Portal created");
     }
 
     // Prevent duplicates
-    if (document.getElementById("processai-bubble")) return;
+    if (document.getElementById("processai-bubble")) {
+      console.warn("⚠️ Bubble already exists");
+      return;
+    }
 
     // Bubble
     const chatButton = document.createElement("div");
@@ -96,34 +104,81 @@
     iframe.setAttribute("sandbox", "allow-scripts allow-same-origin allow-forms");
     iframe.style.pointerEvents = "auto";
 
-    Object.assign(iframe.style, {
-      position: "fixed",
-      bottom: "160px",
-      right: "25px",
-      width: "360px",
-      height: "520px",
-      border: "0",
-      borderRadius: "14px",
-      boxShadow: "0 12px 28px rgba(0,0,0,.3)",
-      opacity: "0",
-      pointerEvents: "none",
-      transform: "translateY(100px)",
-      transition: "all .45s ease",
-      zIndex: "2147483646",
-      background: "transparent",
-      willChange: "transform, opacity",
-    });
+    // Check if mobile
+    const isMobile = window.innerWidth <= 768;
+
+    if (isMobile) {
+      Object.assign(iframe.style, {
+        position: "fixed",
+        bottom: "0",
+        right: "0",
+        left: "0",
+        top: "0",
+        width: "100%",
+        height: "100%",
+        border: "0",
+        borderRadius: "0",
+        boxShadow: "none",
+        opacity: "0",
+        pointerEvents: "none",
+        transform: "translateY(100%)",
+        transition: "all .45s ease",
+        zIndex: "2147483646",
+        background: "#050713",
+        willChange: "transform, opacity",
+      });
+    } else {
+      Object.assign(iframe.style, {
+        position: "fixed",
+        bottom: "160px",
+        right: "25px",
+        width: "360px",
+        height: "520px",
+        border: "0",
+        borderRadius: "14px",
+        boxShadow: "0 12px 28px rgba(0,0,0,.3)",
+        opacity: "0",
+        pointerEvents: "none",
+        transform: "translateY(100px)",
+        transition: "all .45s ease",
+        zIndex: "2147483646",
+        background: "transparent",
+        willChange: "transform, opacity",
+      });
+    }
 
     // Append into portal (important)
     portal.appendChild(chatButton);
     portal.appendChild(iframe);
 
+    console.log("✅ Bubble and iframe appended to portal");
+
     let open = false;
     chatButton.onclick = () => {
       open = !open;
-      iframe.style.opacity = open ? "1" : "0";
-      iframe.style.pointerEvents = open ? "auto" : "none";
-      iframe.style.transform = open ? "translateY(0)" : "translateY(100px)";
+      console.log("🔄 Toggle chat:", open);
+      
+      if (open) {
+        iframe.style.display = "block";
+        iframe.style.opacity = "1";
+        iframe.style.pointerEvents = "auto";
+        iframe.style.transform = "translateY(0)";
+        console.log("✅ Iframe opened");
+      } else {
+        iframe.style.opacity = "0";
+        iframe.style.pointerEvents = "none";
+        iframe.style.transform = isMobile ? "translateY(100%)" : "translateY(100px)";
+        console.log("✅ Iframe closed");
+      }
+    };
+
+    // Test iframe load
+    iframe.onload = () => {
+      console.log("✅ Iframe loaded successfully");
+    };
+
+    iframe.onerror = (e) => {
+      console.error("❌ Iframe failed to load:", e);
     };
   }
 
