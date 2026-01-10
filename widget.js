@@ -1,5 +1,4 @@
 (function () {
-  // 🔹 Read script tag (where widget is embedded)
   const script =
     document.currentScript ||
     document.querySelector("script[data-project-id]");
@@ -12,36 +11,43 @@
     return;
   }
 
-  // 🔹 Build iframe URL with params
   const params = new URLSearchParams();
   params.set("project_id", PROJECT_ID);
-
-  if (BRAND_LOGO) {
-    params.set("brand_logo", BRAND_LOGO);
-  }
+  if (BRAND_LOGO) params.set("brand_logo", BRAND_LOGO);
 
   const APP_URL =
     "https://vite-react-tau-five-75.vercel.app/?" + params.toString();
 
-  // 🔒 Prevent duplicate widget load
   if (window.__processaiChatLoaded) return;
   window.__processaiChatLoaded = true;
 
   function init() {
-    // Ensure DOM is ready
-    if (!document.body) {
-      setTimeout(init, 50);
-      return;
+    if (!document.body) return setTimeout(init, 50);
+
+    // ✅ Create a top-level portal container (avoids Framer transform/overflow issues)
+    let portal = document.getElementById("solviai-portal");
+    if (!portal) {
+      portal = document.createElement("div");
+      portal.id = "solviai-portal";
+
+      Object.assign(portal.style, {
+        position: "fixed",
+        inset: "0",
+        pointerEvents: "none",
+        zIndex: "2147483647",
+      });
+
+      document.body.appendChild(portal);
     }
 
     // Prevent duplicates
     if (document.getElementById("processai-bubble")) return;
 
-    // 🔵 Floating chat bubble
+    // Bubble
     const chatButton = document.createElement("div");
     chatButton.id = "processai-bubble";
+    chatButton.style.pointerEvents = "auto";
 
-    // ✅ Customer support headset icon (inline SVG)
     chatButton.innerHTML = `
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -66,10 +72,10 @@
       position: "fixed",
       bottom: "85px",
       right: "25px",
-      background: "linear-gradient(135deg, #6D28D9, #8B5CF6)", // SolviAI purple
-      borderRadius: "50%",
       width: "64px",
       height: "64px",
+      borderRadius: "50%",
+      background: "linear-gradient(135deg, #6D28D9, #8B5CF6)",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
@@ -77,18 +83,18 @@
       userSelect: "none",
       boxShadow: "0 10px 24px rgba(0,0,0,.25)",
       zIndex: "2147483647",
+      transform: "none",
+      willChange: "transform",
     });
 
-    // 🪟 Chat iframe
+    // Iframe
     const iframe = document.createElement("iframe");
     iframe.id = "processai-frame";
     iframe.src = APP_URL;
     iframe.title = "SolviAI Chat";
     iframe.allow = "microphone; autoplay";
-    iframe.setAttribute(
-      "sandbox",
-      "allow-scripts allow-same-origin allow-forms"
-    );
+    iframe.setAttribute("sandbox", "allow-scripts allow-same-origin allow-forms");
+    iframe.style.pointerEvents = "auto";
 
     Object.assign(iframe.style, {
       position: "fixed",
@@ -105,24 +111,22 @@
       transition: "all .45s ease",
       zIndex: "2147483646",
       background: "transparent",
+      willChange: "transform, opacity",
     });
 
-    document.body.appendChild(chatButton);
-    document.body.appendChild(iframe);
+    // Append into portal (important)
+    portal.appendChild(chatButton);
+    portal.appendChild(iframe);
 
-    // 🔄 Toggle open / close
     let open = false;
     chatButton.onclick = () => {
       open = !open;
       iframe.style.opacity = open ? "1" : "0";
       iframe.style.pointerEvents = open ? "auto" : "none";
-      iframe.style.transform = open
-        ? "translateY(0)"
-        : "translateY(100px)";
+      iframe.style.transform = open ? "translateY(0)" : "translateY(100px)";
     };
   }
 
-  // DOM ready check
   if (document.readyState === "loading") {
     window.addEventListener("DOMContentLoaded", init);
   } else {
